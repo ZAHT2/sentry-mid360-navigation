@@ -44,11 +44,6 @@ def generate_launch_description():
                 "lidar_frame": "",
                 "prior_pcd_file": "",
                 "input_cloud_topic": "registered_scan",
-                "max_translation_jump": 0.35,
-                "max_yaw_jump": 0.35,
-                "max_error": 1.0,
-                "min_inliers": 50,
-                "min_inlier_ratio": 0.05,
             }
         ],
     )

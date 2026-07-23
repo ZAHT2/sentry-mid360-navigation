@@ -52,15 +52,10 @@ private:
 
   int num_threads_;
   int num_neighbors_;
-  int max_iterations_;
   float global_leaf_size_;
   float registered_leaf_size_;
   float max_dist_sq_;
-  double max_translation_jump_;
-  double max_yaw_jump_;
-  double max_error_;
-  int min_inliers_;
-  double min_inlier_ratio_;
+  bool planar_mode_;
   std::vector<double> init_pose_;
 
   std::string map_frame_;

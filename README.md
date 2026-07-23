@@ -50,6 +50,7 @@ gimbal_yaw -> gimbal_yaw_fake:
 
 - [MID360 host mapping SOP](mid360_宿主机建图流程.md)
 - [MID360 low-speed navigation SOP](mid360_导航固定流程.md)
+- [8-week internship sprint plan](实习冲刺学习计划.md)
 - [Firmware Nav2 cmd_vel patch notes](firmware_nav2_cmdvel_patch.md)
 - [Known issues](ISSUES.md)
 
@@ -179,6 +180,7 @@ gimbal_yaw -> gimbal_yaw_fake:
 
 - [MID360 宿主机建图流程](mid360_宿主机建图流程.md)
 - [MID360 低速导航固定流程](mid360_导航固定流程.md)
+- [8 周实习冲刺学习计划](实习冲刺学习计划.md)
 - [Nav2 cmd_vel 固件补丁记录](firmware_nav2_cmdvel_patch.md)
 - [已知问题](ISSUES.md)
 

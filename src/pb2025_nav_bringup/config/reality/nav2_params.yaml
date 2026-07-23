@@ -166,24 +166,15 @@ small_gicp_relocalization:
     use_sim_time: False
     num_threads: 4
     num_neighbors: 20
-    max_iterations: 30
     global_leaf_size: 0.1
-    registered_leaf_size: 0.1
-    max_dist_sq: 5.0
+    registered_leaf_size: 0.05
+    max_dist_sq: 3.0
     map_frame: "map"
     odom_frame: "odom"
     base_frame: "base_footprint"
     robot_base_frame: "gimbal_yaw"
     lidar_frame: "front_mid360"
     init_pose: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]   # [x, y, z, roll, pitch, yaw]
-    # Use the current registered scan for relocalization. Long-lived terrain maps are reserved for
-    # costmaps, so temporary obstacles do not pull map->odom.
-    input_cloud_topic: /registered_scan
-    max_translation_jump: 0.35
-    max_yaw_jump: 0.35
-    max_error: 1.0
-    min_inliers: 50
-    min_inlier_ratio: 0.05
     # The prior_pcd_file does not need to be specified since it going to be set by defaults in launch.
     # prior_pcd_file: ""
 
@@ -378,12 +369,12 @@ controller_server:
       use_interpolation: false
       use_rotate_to_heading: false
       use_rotate_to_heading_treshold: 0.1
-      min_approach_linear_velocity: 0.2
+      min_approach_linear_velocity: 0.5
       approach_velocity_scaling_dist: 1.0
-      v_linear_min: -0.8
-      v_linear_max: 0.8
-      v_angular_min: -1.2
-      v_angular_max: 1.2
+      v_linear_min: -2.5
+      v_linear_max: 2.5
+      v_angular_min: -3.0
+      v_angular_max: 3.0
       curvature_min: 0.4                                # 低曲率阈值，低于此值不减速。
       curvature_max: 0.7                                # 高曲率阈值，高于此值大幅减速。
       reduction_ratio_at_high_curvature: 0.5            # 高曲率时的速度降低比例。 0.5 (即减速 50%)
@@ -575,10 +566,10 @@ velocity_smoother:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.8, 0.8, 1.2]
-    min_velocity: [-0.8, -0.8, -1.2]
-    max_accel: [0.8, 0.8, 1.5]
-    max_decel: [-0.8, -0.8, -1.5]
+    max_velocity: [2.5, 2.5, 3.0]
+    min_velocity: [-2.5, -2.5, -3.0]
+    max_accel: [4.5, 4.5, 5.0]
+    max_decel: [-4.5, -4.5, -5.0]
     odom_topic: "odometry"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

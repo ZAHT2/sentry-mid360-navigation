@@ -14,34 +14,26 @@
 
 #include "small_gicp_relocalization/small_gicp_relocalization.hpp"
 
-#include <cmath>
-
 #include "pcl/common/transforms.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "small_gicp/pcl/pcl_registration.hpp"
 #include "small_gicp/util/downsampling_omp.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
 
+#include <cmath>
+
 namespace small_gicp_relocalization
 {
 
 namespace
 {
-double yawFromRotation(const Eigen::Matrix3d & rotation)
+Eigen::Isometry3d projectToPlanar(const Eigen::Isometry3d & transform)
 {
-  return std::atan2(rotation(1, 0), rotation(0, 0));
-}
-
-double normalizeAngle(double angle)
-{
-  constexpr double pi = 3.14159265358979323846;
-  while (angle > pi) {
-    angle -= 2.0 * pi;
-  }
-  while (angle < -pi) {
-    angle += 2.0 * pi;
-  }
-  return angle;
+  Eigen::Isometry3d planar = Eigen::Isometry3d::Identity();
+  const double yaw = std::atan2(transform.linear()(1, 0), transform.linear()(0, 0));
+  planar.translation() << transform.translation().x(), transform.translation().y(), 0.0;
+  planar.linear() = Eigen::AngleAxisd(yaw, Eigen::Vector3d::UnitZ()).toRotationMatrix();
+  return planar;
 }
 }  // namespace
 
@@ -52,7 +44,6 @@ SmallGicpRelocalizationNode::SmallGicpRelocalizationNode(const rclcpp::NodeOptio
 {
   this->declare_parameter("num_threads", 4);
   this->declare_parameter("num_neighbors", 20);
-  this->declare_parameter("max_iterations", 30);
   this->declare_parameter("global_leaf_size", 0.25);
   this->declare_parameter("registered_leaf_size", 0.25);
   this->declare_parameter("max_dist_sq", 1.0);
@@ -64,15 +55,10 @@ SmallGicpRelocalizationNode::SmallGicpRelocalizationNode(const rclcpp::NodeOptio
   this->declare_parameter("prior_pcd_file", "");
   this->declare_parameter("init_pose", std::vector<double>{0., 0., 0., 0., 0., 0.});
   this->declare_parameter("input_cloud_topic", "registered_scan");
-  this->declare_parameter("max_translation_jump", 0.35);
-  this->declare_parameter("max_yaw_jump", 0.35);
-  this->declare_parameter("max_error", 1.0);
-  this->declare_parameter("min_inliers", 50);
-  this->declare_parameter("min_inlier_ratio", 0.05);
+  this->declare_parameter("planar_mode", true);
 
   this->get_parameter("num_threads", num_threads_);
   this->get_parameter("num_neighbors", num_neighbors_);
-  this->get_parameter("max_iterations", max_iterations_);
   this->get_parameter("global_leaf_size", global_leaf_size_);
   this->get_parameter("registered_leaf_size", registered_leaf_size_);
   this->get_parameter("max_dist_sq", max_dist_sq_);
@@ -84,11 +70,7 @@ SmallGicpRelocalizationNode::SmallGicpRelocalizationNode(const rclcpp::NodeOptio
   this->get_parameter("prior_pcd_file", prior_pcd_file_);
   this->get_parameter("init_pose", init_pose_);
   this->get_parameter("input_cloud_topic", input_cloud_topic_);
-  this->get_parameter("max_translation_jump", max_translation_jump_);
-  this->get_parameter("max_yaw_jump", max_yaw_jump_);
-  this->get_parameter("max_error", max_error_);
-  this->get_parameter("min_inliers", min_inliers_);
-  this->get_parameter("min_inlier_ratio", min_inlier_ratio_);
+  this->get_parameter("planar_mode", planar_mode_);
 
   // [x, y, z, roll, pitch, yaw] - init_pose parameters
   if (!init_pose_.empty() && init_pose_.size() >= 6) {
@@ -97,6 +79,9 @@ SmallGicpRelocalizationNode::SmallGicpRelocalizationNode(const rclcpp::NodeOptio
       Eigen::AngleAxisd(init_pose_[5], Eigen::Vector3d::UnitZ()) *
       Eigen::AngleAxisd(init_pose_[4], Eigen::Vector3d::UnitY()) *
       Eigen::AngleAxisd(init_pose_[3], Eigen::Vector3d::UnitX()).toRotationMatrix();
+    if (planar_mode_) {
+      result_t_ = projectToPlanar(result_t_);
+    }
   }
   previous_result_t_ = result_t_;
 
@@ -196,67 +181,22 @@ void SmallGicpRelocalizationNode::performRegistration()
     source_, small_gicp::KdTreeBuilderOMP(num_threads_));
 
   if (!source_ || !source_tree_) {
-    accumulated_cloud_->clear();
-    return;
-  }
-
-  if (source_->empty()) {
-    RCLCPP_WARN(this->get_logger(), "Downsampled GICP source is empty.");
-    accumulated_cloud_->clear();
     return;
   }
 
   register_->reduction.num_threads = num_threads_;
   register_->rejector.max_dist_sq = max_dist_sq_;
-  register_->optimizer.max_iterations = max_iterations_;
+  register_->optimizer.max_iterations = 10;
 
   auto result = register_->align(*target_, *source_, *target_tree_, previous_result_t_);
 
-  const auto & candidate_t = result.T_target_source;
-  const double translation_jump =
-    (candidate_t.translation().head<2>() - previous_result_t_.translation().head<2>()).norm();
-  const double yaw_jump = std::abs(normalizeAngle(
-    yawFromRotation(candidate_t.rotation()) - yawFromRotation(previous_result_t_.rotation())));
-  const double inlier_ratio =
-    source_->empty() ? 0.0 : static_cast<double>(result.num_inliers) / source_->size();
-
-  const bool finite_result = candidate_t.matrix().allFinite() && std::isfinite(result.error);
-  const bool error_ok = max_error_ <= 0.0 || result.error <= max_error_;
-  const bool inliers_ok =
-    min_inliers_ <= 0 || static_cast<int>(result.num_inliers) >= min_inliers_;
-  const bool inlier_ratio_ok = min_inlier_ratio_ <= 0.0 || inlier_ratio >= min_inlier_ratio_;
-  const bool translation_jump_ok =
-    max_translation_jump_ <= 0.0 || translation_jump <= max_translation_jump_;
-  const bool yaw_jump_ok = max_yaw_jump_ <= 0.0 || yaw_jump <= max_yaw_jump_;
-  const bool accepted = result.converged && finite_result && error_ok && inliers_ok &&
-                        inlier_ratio_ok && translation_jump_ok && yaw_jump_ok;
-
-  const char * status = accepted ? "accepted" : "rejected";
-  const char * log_reason =
-    !result.converged      ? "not_converged"
-    : !finite_result       ? "non_finite_result"
-    : !error_ok            ? "error_too_high"
-    : !inliers_ok          ? "too_few_inliers"
-    : !inlier_ratio_ok     ? "inlier_ratio_too_low"
-    : !translation_jump_ok ? "translation_jump"
-    : !yaw_jump_ok         ? "yaw_jump"
-                            : "ok";
-
-  RCLCPP_INFO(
-    this->get_logger(),
-    "GICP %s: reason=%s converged=%s iterations=%zu inliers=%zu inlier_ratio=%.3f "
-    "error=%.6f translation_jump=%.3f yaw_jump=%.3f source_points=%zu target_points=%zu "
-    "input_frame=%s",
-    status, log_reason, result.converged ? "true" : "false", result.iterations,
-    result.num_inliers, inlier_ratio, result.error, translation_jump, yaw_jump, source_->size(),
-    target_->size(), current_scan_frame_id_.c_str());
-
-  if (accepted) {
-    result_t_ = previous_result_t_ = candidate_t;
+  if (result.converged) {
+    result_t_ = previous_result_t_ = result.T_target_source;
+    if (planar_mode_) {
+      result_t_ = previous_result_t_ = projectToPlanar(result_t_);
+    }
   } else {
-    RCLCPP_WARN(
-      this->get_logger(),
-      "Keeping previous map->odom transform after rejected GICP update. reason=%s", log_reason);
+    RCLCPP_WARN(this->get_logger(), "GICP did not converge.");
   }
 
   accumulated_cloud_->clear();
@@ -275,12 +215,11 @@ void SmallGicpRelocalizationNode::publishTransform()
   transform_stamped.child_frame_id = odom_frame_;
 
   const Eigen::Vector3d translation = result_t_.translation();
-  const Eigen::AngleAxisd yaw_only(yawFromRotation(result_t_.rotation()), Eigen::Vector3d::UnitZ());
-  const Eigen::Quaterniond rotation(yaw_only);
+  const Eigen::Quaterniond rotation(result_t_.rotation());
 
   transform_stamped.transform.translation.x = translation.x();
   transform_stamped.transform.translation.y = translation.y();
-  transform_stamped.transform.translation.z = 0.0;
+  transform_stamped.transform.translation.z = translation.z();
   transform_stamped.transform.rotation.x = rotation.x();
   transform_stamped.transform.rotation.y = rotation.y();
   transform_stamped.transform.rotation.z = rotation.z();
@@ -309,6 +248,9 @@ void SmallGicpRelocalizationNode::initialPoseCallback(
       tf_buffer_->lookupTransform(robot_base_frame_, current_scan_frame_id_, tf2::TimePointZero);
     Eigen::Isometry3d robot_base_to_odom = tf2::transformToEigen(transform.transform);
     Eigen::Isometry3d map_to_odom = map_to_robot_base * robot_base_to_odom;
+    if (planar_mode_) {
+      map_to_odom = projectToPlanar(map_to_odom);
+    }
 
     previous_result_t_ = result_t_ = map_to_odom;
   } catch (tf2::TransformException & ex) {
