@@ -1,0 +1,10 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    # 把 state_interfaces 广播到 /joint_states（RViz2 需要）
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+joint_state_broadcaster:
+  ros__parameters: {}

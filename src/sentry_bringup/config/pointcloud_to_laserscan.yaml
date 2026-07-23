@@ -1,0 +1,14 @@
+pointcloud_to_laserscan_node:
+  ros__parameters:
+    target_frame: base_link        # 在 base_link 坐标系下过滤（雷达倾斜时必须用此帧）
+    transform_tolerance: 0.05
+    min_height: 0.20               # 捕获墙壁中段
+    max_height: 1.00               # RoboMaster 围墙约 1m 高
+    angle_min: -3.14159            # -180°
+    angle_max:  3.14159            #  180°（Mid360 全向扫描）
+    angle_increment: 0.00436       # ~0.25° 分辨率
+    scan_time: 0.1                 # 10Hz
+    range_min: 0.3
+    range_max: 8.0
+    use_inf: true
+    inf_epsilon: 1.0

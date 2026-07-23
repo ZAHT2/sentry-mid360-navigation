@@ -1,0 +1,61 @@
+# ROS 2 / colcon generated files
+build/
+install/
+log/
+.colcon/
+
+# Runtime and temporary files
+*.log
+*.pid
+*.tmp
+*.bak
+*.swp
+*~
+.cache/
+.codex_tmp/
+tmp_*/
+backups/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE / local machine
+.vscode/
+.idea/
+.DS_Store
+
+# Large robot data assets
+bags/
+*.bag
+*.db3
+*.mcap
+*.pcd
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Generated map previews are small and useful; PCD files are intentionally ignored above.
+!real_maps/*.yaml
+!real_maps/*.pgm
+!real_maps/*.png
+!maps/*.yaml
+!maps/*.pgm
+
+# Local Docker / historical scratch files
+nav2_params_reality.container.yaml*
+small_gicp_relocalization.cpp.container*
+small_gicp_relocalization.cpp.current
+small_gicp_relocalization.hpp.container
+run_pb2025_docker.sh
+run_sim_docker.sh
+/start_nav.sh
+/10_nvidia.json
+/mid360_user_config.json
+/nav2_params_sim.yaml
+/slam_toolbox_runtime_params.yaml
+/questions.md
+/EMBEDDED_CHANGES*.md

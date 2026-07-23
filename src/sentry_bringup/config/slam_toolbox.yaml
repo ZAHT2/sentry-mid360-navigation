@@ -1,0 +1,41 @@
+slam_toolbox:
+  ros__parameters:
+    # 运行模式：mapping（建图）或 localization（已有地图定位）
+    mode: mapping
+
+    # 话题与坐标系
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+    use_scan_matching: true
+    use_scan_barycenter: true
+
+    # 地图分辨率（5cm 适合比赛场地）
+    resolution: 0.05
+    map_update_interval: 5.0
+
+    # 粒子滤波参数
+    minimum_travel_distance: 0.1
+    minimum_travel_heading: 0.2
+
+    # 回环检测
+    loop_search_maximum_distance: 3.0
+    loop_match_minimum_chain_size: 10
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.45
+
+    # 扫描匹配
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+    fine_search_angle_offset: 0.00349
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true
+
+    # 串行化（关闭以减少 CPU 占用）
+    serialize_map_to_file: false
+    deserialize_map_from_file: false

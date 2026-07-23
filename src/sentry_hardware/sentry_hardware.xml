@@ -1,0 +1,11 @@
+<library path="sentry_hardware">
+  <class name="sentry_hardware/ChassisInterface"
+         type="sentry_hardware::ChassisInterface"
+         base_class_type="hardware_interface::SystemInterface">
+    <description>
+      ros2_control hardware interface for RM Sentry 4-wheel steering chassis.
+      Bridges serial communication (A-board to MiniPC) with ROS2 control framework.
+      Publishes /odom and odom->base_link TF from lower-computer fused odometry.
+    </description>
+  </class>
+</library>

@@ -1,0 +1,167 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="sentry">
+
+  <!-- ══════════════════════════════════════════════
+       尺寸参数（单位：米）
+  ══════════════════════════════════════════════ -->
+
+  <!-- 底盘 -->
+  <xacro:property name="chassis_l"    value="0.380"/>   <!-- 长（估算，可改）-->
+  <xacro:property name="chassis_w"    value="0.380"/>   <!-- 宽（估算，可改）-->
+  <xacro:property name="chassis_h"    value="0.520"/>   <!-- 高，不含轮子 -->
+
+  <!-- 四舵轮 -->
+  <xacro:property name="wheel_radius" value="0.060"/>   <!-- 半径 = 直径120/2 -->
+  <xacro:property name="wheel_thick"  value="0.040"/>   <!-- 轮宽（估算）-->
+  <xacro:property name="wheel_x"      value="0.1675"/>  <!-- 距中心 x ±：轴距335/2 -->
+  <xacro:property name="wheel_y"      value="0.1675"/>  <!-- 距中心 y ±：轮距335/2 -->
+
+  <!-- Mid360：中心距地面 353mm，base_link 在地面 z=0 -->
+  <xacro:property name="lidar_z"      value="0.353"/>
+  <xacro:property name="lidar_r"      value="0.038"/>   <!-- 官方尺寸 -->
+  <xacro:property name="lidar_h"      value="0.040"/>
+
+  <!-- ══════════════════════════════════════════════
+       base_footprint（地面投影，Nav2 要求）
+  ══════════════════════════════════════════════ -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child  link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ══════════════════════════════════════════════
+       base_link（底盘主体，原点在地面中心）
+  ══════════════════════════════════════════════ -->
+  <link name="base_link">
+    <visual>
+      <!-- 底盘体从轮轴高度往上，视觉中心 = wheel_radius + chassis_h/2 -->
+      <origin xyz="0 0 ${wheel_radius + chassis_h / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${chassis_l} ${chassis_w} ${chassis_h}"/>
+      </geometry>
+      <material name="light_gray">
+        <color rgba="0.85 0.85 0.85 0.9"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${wheel_radius + chassis_h / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${chassis_l} ${chassis_w} ${chassis_h}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 ${wheel_radius + chassis_h / 2.0}" rpy="0 0 0"/>
+      <mass value="15.0"/>
+      <inertia ixx="0.35" iyy="0.35" izz="0.18"
+               ixy="0.0"  ixz="0.0"  iyz="0.0"/>
+    </inertial>
+  </link>
+
+  <!-- ══════════════════════════════════════════════
+       四舵轮宏（仅做视觉和碰撞，运动学由 C 板处理）
+  ══════════════════════════════════════════════ -->
+  <xacro:macro name="swerve_wheel" params="name x y">
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_thick}"/>
+        </geometry>
+        <material name="dark_gray">
+          <color rgba="0.15 0.15 0.15 1.0"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0"/>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_thick}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.6"/>
+        <inertia ixx="0.0009" iyy="0.0009" izz="0.0014"
+                 ixy="0.0"    ixz="0.0"    iyz="0.0"/>
+      </inertial>
+    </link>
+
+    <joint name="${name}_joint" type="fixed">
+      <parent link="base_link"/>
+      <child  link="${name}"/>
+      <!-- 轮中心 z = wheel_radius（轮底切地，base_link 在地面）-->
+      <origin xyz="${x} ${y} ${wheel_radius}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:swerve_wheel name="front_left_wheel"  x=" ${wheel_x}"  y=" ${wheel_y}"/>
+  <xacro:swerve_wheel name="front_right_wheel" x=" ${wheel_x}"  y="-${wheel_y}"/>
+  <xacro:swerve_wheel name="rear_left_wheel"   x="-${wheel_x}"  y=" ${wheel_y}"/>
+  <xacro:swerve_wheel name="rear_right_wheel"  x="-${wheel_x}"  y="-${wheel_y}"/>
+
+  <!-- ══════════════════════════════════════════════
+       Livox Mid360
+  ══════════════════════════════════════════════ -->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${lidar_r}" length="${lidar_h}"/>
+      </geometry>
+      <material name="lidar_blue">
+        <color rgba="0.05 0.3 0.9 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="${lidar_r}" length="${lidar_h}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.26"/>
+      <inertia ixx="0.00015" iyy="0.00015" izz="0.0001"
+               ixy="0.0"     ixz="0.0"     iyz="0.0"/>
+    </inertial>
+  </link>
+
+  <!-- Mid360 安装位置（x/y 默认居中，如有偏移请修改 xyz）-->
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child  link="lidar_link"/>
+    <origin xyz="0 0 ${lidar_z}" rpy="0 ${pi/4} 0"/>
+  </joint>
+
+  <!-- ══════════════════════════════════════════════
+       ros2_control 硬件接口声明
+       joint 名 "chassis" 与 chassis_interface.cpp 中
+       export_state/command_interfaces() 保持一致
+  ══════════════════════════════════════════════ -->
+  <ros2_control name="SentryHardware" type="system">
+    <hardware>
+      <plugin>sentry_hardware/ChassisInterface</plugin>
+      <param name="serial_port">/dev/ttyABoard</param>
+      <param name="baudrate">115200</param>
+      <param name="cmd_vel_topic">/cmd_vel</param>
+      <param name="odom_topic">/chassis/odom_raw</param>
+      <param name="odom_frame">chassis_odom</param>
+      <param name="base_frame">base_footprint</param>
+      <param name="publish_odom">true</param>
+      <param name="publish_tf">false</param>
+    </hardware>
+    <joint name="chassis">
+      <!-- 下行：Nav2 → 控制器 → 这里 → hardware interface → 串口 -->
+      <command_interface name="vx"/>
+      <command_interface name="vy"/>
+      <command_interface name="wz"/>
+      <!-- 上行：串口 → hardware interface → 这里（odom 在 chassis_interface 内直接发布）-->
+      <state_interface name="vx"/>
+      <state_interface name="vy"/>
+      <state_interface name="yaw"/>
+      <state_interface name="pos_x"/>
+      <state_interface name="pos_y"/>
+    </joint>
+  </ros2_control>
+
+</robot>
