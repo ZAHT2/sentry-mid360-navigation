@@ -223,6 +223,18 @@ ROS 2 Humble host-side MID360 Point-LIO/GICP/Nav2 sentry robot mapping and low-s
 基于 ROS 2 Humble、MID360、Point-LIO、small_gicp 和 Nav2 的宿主机实车建图与低速导航工作空间。
 ```
 
+## 10. 致谢说明
+
+README 中已经加入对原开源作者和仓库的致谢。发布前确认保留这一段：
+
+```text
+Special thanks to @lihanchen2004 and the PolarBear Robotics Team.
+Original open-source project:
+https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav
+```
+
+GitHub 会自动把 `@lihanchen2004` 渲染成用户链接。正式 README 使用完整链接，避免在不同 Markdown 环境下无法跳转。
+
 ---
 
 # English Quick Reference
@@ -281,4 +293,3 @@ For HTTPS push, use:
 Username: ZAHT2
 Password: GitHub Personal Access Token, not account password
 ```
-

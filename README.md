@@ -53,6 +53,16 @@ gimbal_yaw -> gimbal_yaw_fake:
 - [Firmware Nav2 cmd_vel patch notes](firmware_nav2_cmdvel_patch.md)
 - [Known issues](ISSUES.md)
 
+## Acknowledgements
+
+This workspace is built on top of open-source work from the RoboMaster community.
+
+Special thanks to [@lihanchen2004](https://github.com/lihanchen2004) and the PolarBear Robotics Team for sharing the original sentry navigation stack:
+
+- [SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav](https://github.com/SMBU-PolarBear-Robotics-Team/pb2025_sentry_nav)
+
+Our host-side mapping, TF, relocalization stability, low-speed navigation, chassis bridge, and SOP documents are based on real-robot integration and testing on top of that open-source foundation.
+
 ## Build
 
 ```bash
@@ -114,4 +124,3 @@ Do not commit:
 - PCD point cloud maps
 - firmware zip archives
 - private hardware serial numbers or personal deployment logs
-
