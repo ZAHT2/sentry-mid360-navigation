@@ -71,23 +71,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    base_link_tf = Node(
-        package="tf2_ros",
-        executable="static_transform_publisher",
-        name="base_footprint_to_base_link_tf",
-        arguments=[
-            "--x", "0",
-            "--y", "0",
-            "--z", "0",
-            "--roll", "0",
-            "--pitch", "0",
-            "--yaw", "0",
-            "--frame-id", "base_footprint",
-            "--child-frame-id", "base_link",
-        ],
-        output="screen",
-    )
-
     gimbal_yaw_tf = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
@@ -195,7 +178,6 @@ def generate_launch_description():
                 description="Use independent processes by default for easier debugging",
             ),
             front_mid360_tf,
-            base_link_tf,
             gimbal_yaw_tf,
             gimbal_yaw_fake_tf,
             pb2025_navigation,
