@@ -14,13 +14,13 @@
 
 #include "small_gicp_relocalization/small_gicp_relocalization.hpp"
 
+#include <cmath>
+
 #include "pcl/common/transforms.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "small_gicp/pcl/pcl_registration.hpp"
 #include "small_gicp/util/downsampling_omp.hpp"
 #include "tf2_eigen/tf2_eigen.hpp"
-
-#include <cmath>
 
 namespace small_gicp_relocalization
 {
